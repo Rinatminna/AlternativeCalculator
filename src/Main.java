@@ -1,54 +1,89 @@
 import java.util.Scanner;
 
 public class Main {
+    // Список возможных операций
+    private static final String[] OPERATORS = {"+", "-", "*", "/"};
+
     public static void main(String[] args) throws Exception {
-        System.out.println("Введите выражение");
-        Scanner scn = new Scanner(System.in);
-        String exp = scn.nextLine();
-        String[] a = new String[] {"+", "-", "*", "/"};
-        char action = ' ';
-        for (int i = 0; i < a.length; i++) {
-            if (exp.contains(a[i])) {
-                action = a[i].charAt(0);
-                break;
-            }
-        }
-        if (action == ' ') throw new Exception("Некорректный знак действия");
-        String[] data = exp.split(" \\" + action + " ");
-        if (data[0].length() > 10 || data[1].length() > 10) throw new Exception("Введено больше 10 символов");
-        if (action == '*' || action == '/') {
-            if (data[1].contains("\"")) throw new Exception("Строку можно делить или умножать только на число");
-        }
-        for (int i = 0; i < data.length; i++) {
-            data[i] = data[i].replace("\"", "");
-        }
-        String result = switch (action) {
-            case '+' -> data[0] + data[1];
-            case '*' -> {
-                int multiplier = Integer.parseInt(data[1]);
-                String r = "";
-                for (int i = 0; i < multiplier; i++) {
-                    r += data[0];
-                }
-                yield r;
-            }
-            case '-' -> {
-                int index = data[0].indexOf(data[1]);
-                if (index == -1) yield data[0];
-                String r = data[0].substring(0, index);
-                r += data[0].substring(index + data[1].length());
-                yield r;
-            }
-            case '/' -> {
-                int newLen = data[0].length() / Integer.parseInt(data[1]);
-                yield data[0].substring(0, newLen);
-            }
-            default -> throw new IllegalArgumentException("Seriously?!");
-        };
+        String expression = readInput();
+        char action = findOperator(expression);
+        String[] operands = splitExpression(expression, action);
+
+        validateOperands(operands, action);
+
+        String result = performOperation(operands, action);
+
         printInQuotes(result);
     }
-    static void printInQuotes(String text) {
-        if (text.length() > 40) text = text.substring(0, 40) + "...";
-        System.out.println(text);
+
+    private static String readInput() {
+        System.out.println("Введите выражение");
+        Scanner scn = new Scanner(System.in);
+        return scn.nextLine();
+    }
+
+    private static char findOperator(String expression) throws Exception {
+        for (String operator : OPERATORS) {
+            if (expression.contains(operator)) {
+                return operator.charAt(0);
+            }
+        }
+        throw new Exception("Некорректный знак действия");
+    }
+
+    private static String[] splitExpression(String expression, char action) {
+        String[] operands = expression.split(" \\" + action + " ");
+        for (int i = 0; i < operands.length; i++) {
+            operands[i] = operands[i].replace("\"", "").trim();
+        }
+        return operands;
+    }
+
+    private static void validateOperands(String[] operands, char action) throws Exception {
+        if (operands[0].length() > 10 || operands[1].length() > 10) {
+            throw new Exception("Введено больше 10 символов");
+        }
+
+        if (action == '*' || action == '/') {
+            try {
+                Integer.parseInt(operands[1]); // Если не число, выбросит исключение
+            } catch (NumberFormatException e) {
+                throw new Exception("Строку можно делить или умножать только на число");
+            }
+        }
+    }
+
+    private static String performOperation(String[] operands, char action) {
+        return switch (action) {
+            case '+' -> "\"" + operands[0] + operands[1] + "\"";
+            case '*' -> {
+                int multiplier = Integer.parseInt(operands[1]);
+                StringBuilder r = new StringBuilder();
+                for (int i = 0; i < multiplier; i++) {
+                    r.append(operands[0]);
+                }
+                yield "\"" + r + "\"";
+            }
+            case '-' -> {
+                int index = operands[0].indexOf(operands[1]);
+                String r;
+                if (index == -1) {
+                    r = operands[0];
+                } else {
+                    r = operands[0].substring(0, index) + operands[0].substring(index + operands[1].length());
+                }
+                yield "\"" + r + "\"";
+            }
+            case '/' -> {
+                int divisor = Integer.parseInt(operands[1]);
+                int newLen = operands[0].length() / divisor;
+                yield "\"" + operands[0].substring(0, newLen) + "\"";
+            }
+            default -> throw new IllegalArgumentException("Неизвестная операция");
+        };
+    }
+
+    private static void printInQuotes(String text) {
+        System.out.println(text); // Вывод результата в кавычках
     }
 }
