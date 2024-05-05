@@ -46,7 +46,10 @@ public class Main {
 
         if (action == '*' || action == '/') {
             try {
-                Integer.parseInt(operands[1]); // Если не число, выбросит исключение
+                int value = Integer.parseInt(operands[1]);
+                if (value < 1 || value > 10) { // Проверка диапазона от 1 до 10
+                    throw new Exception("Число должно быть от 1 до 10");
+                }
             } catch (NumberFormatException e) {
                 throw new Exception("Строку можно делить или умножать только на число");
             }
@@ -84,6 +87,7 @@ public class Main {
     }
 
     private static void printInQuotes(String text) {
+        if (text.length() > 40) text = text.substring(0, 40) + "...";
         System.out.println(text); // Вывод результата в кавычках
     }
 }
